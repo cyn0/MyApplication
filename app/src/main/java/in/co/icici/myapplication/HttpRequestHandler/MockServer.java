@@ -4,8 +4,6 @@ import android.text.TextUtils;
 
 import org.json.JSONObject;
 
-import java.util.Arrays;
-
 import in.co.icici.myapplication.Constants;
 
 public class MockServer {
@@ -38,9 +36,14 @@ public class MockServer {
 
 			boolean foundAmount = tryParsingAmount(msg);
 			tryParsingBiller(origin, msg, foundAmount);
+
+//			long currentTime = System.nanoTime();
+//			responseObject.put(Constants.SMSG_KEY_MSG_ID, currentTime);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 		return responseObject;
 	}
 
@@ -50,7 +53,15 @@ public class MockServer {
 			if(origin.contains(ACT) || msg.contains(ACT)) {
 				responseObject.put(Constants.SMSG_KEY_NICKNAME, ACT);
 				responseObject.put(Constants.SMSG_KEY_BILLER, Constants.VALUE_INTERNET);
+				responseObject.put(Constants.SMSG_KEY_VALID, true);
+
+			} else if(msg.contains("electricity")) {
+				responseObject.put(Constants.SMSG_KEY_NICKNAME, "EB");
+				responseObject.put(Constants.SMSG_KEY_BILLER, Constants.VALUE_ELECTRICITY);
+				responseObject.put(Constants.SMSG_KEY_VALID, true);
+
 			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

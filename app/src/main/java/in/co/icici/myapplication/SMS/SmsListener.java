@@ -6,14 +6,18 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
+import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
+
+import org.json.JSONObject;
+
 import in.co.icici.myapplication.Constants;
 import in.co.icici.myapplication.HttpRequestHandler.Httphandler;
 import in.co.icici.myapplication.HttpRequestHandler.Httphandler.HttpDataListener;
+import in.co.icici.myapplication.SQL.SQLDatabaseHandler;
+import in.co.icici.myapplication.util.Authorisation;
+import in.co.icici.myapplication.util.Authorisation.AuthorisationListener;
 import in.co.icici.myapplication.util.MyNotification;
-
-import org.json.JSONObject;
 
 /**
  * Created by paln on 2/4/2017.
@@ -25,6 +29,7 @@ public class SmsListener extends BroadcastReceiver {
 	private static final String SMS_RECEIVED = "android.provider.Telephony.SMS_RECEIVED";
 	private static final String TAG = "SMSBroadcastReceiver";
 	private Context mContext;
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		mContext = context;
@@ -72,8 +77,31 @@ public class SmsListener extends BroadcastReceiver {
 
 	private void handleServerResponse(final String response) {
 		try {
+
 			final JSONObject responseObject = new JSONObject(response);
-			MyNotification.showPaybillNotification(mContext, responseObject);
+			if(responseObject.has(Constants.SMSG_KEY_VALID) && responseObject.getBoolean(Constants.SMSG_KEY_VALID)) {
+
+				//save the msg in DB
+				SQLDatabaseHandler.getSharedInstance(mContext).addPayment(response);
+
+				if(TextUtils.isEmpty(Constants.authToken)) {
+					AuthorisationListener authorisationListener = new AuthorisationListener() {
+						@Override
+						public void onAuthorisationSuccess() {
+							MyNotification.showPaybillNotification(mContext, responseObject);
+						}
+
+						@Override
+						public void onAuthorisationFail() {
+
+						}
+					};
+					Authorisation.setAuthToken(Constants.emailId, Constants.passwd, authorisationListener);
+				} else {
+					MyNotification.showPaybillNotification(mContext, responseObject);
+
+				}
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

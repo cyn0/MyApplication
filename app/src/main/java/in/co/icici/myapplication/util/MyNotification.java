@@ -10,11 +10,12 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-import in.co.icici.myapplication.Constants;
-import in.co.icici.myapplication.MainActivity;
-import in.co.icici.myapplication.R;
+import java.util.Date;
 
-import static android.content.ContentValues.TAG;
+import in.co.icici.myapplication.Constants;
+import in.co.icici.myapplication.LoginActivity;
+import in.co.icici.myapplication.PaymentFragment;
+import in.co.icici.myapplication.R;
 
 /**
  * Created by paln on 3/4/2017.
@@ -32,11 +33,17 @@ public class MyNotification {
 
 				final String title = "Pay " + billerName + " bill";
 				final String text = "Tap to pay " + nickName + " Rs." + amount;
-				Intent intent = new Intent(context, MainActivity.class);
+				Intent intent = new Intent(context, LoginActivity.class);
+				intent.putExtra(Constants.INTENT_HAS_MESSAGE, true);
 				intent.putExtra(Constants.INTENT_MESSAGE, responseObject.toString());
-				PendingIntent contentIntent = PendingIntent.getActivity(context, 0, intent, 0);
+				intent.putExtra(Constants.INTENT_FRAGMENT_NAME, PaymentFragment.class.getName());
+
+				int requestCode = (int) ((new Date().getTime() / 1000L) % Integer.MAX_VALUE);
+				PendingIntent contentIntent = PendingIntent.getActivity(context, requestCode, intent, PendingIntent.FLAG_ONE_SHOT);
 
 				showNotification(context, contentIntent, title, text);
+				Log.d(TAG, responseObject.toString());
+
 			}
 
 		} catch (Exception e) {

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="#ffffff"
+                android:padding="5dip" >
+
+    <!--  ListRow Left sied Thumbnail image -->
+    <LinearLayout android:id="@+id/thumbnail"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:padding="3dip"
+                  android:layout_alignParentLeft="true"
+                  android:layout_marginRight="5dip">
+
+        <ImageView
+            android:id="@+id/list_image"
+            android:layout_width="50dip"
+            android:layout_height="50dip"
+            android:src="@drawable/ic_menu_gallery"/>
+
+    </LinearLayout>
+
+    <!-- Title Of Song-->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/thumbnail"
+        android:layout_toRightOf="@+id/thumbnail"
+        android:textColor="#33B5E5"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/amount"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/title"
+        android:textColor="#343434"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_marginTop="1dip"
+        android:layout_toRightOf="@+id/thumbnail"
+        />
+    <TextView
+        android:id="@+id/artist"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/amount"
+        android:textColor="#343434"
+        android:textSize="10dip"
+        android:layout_marginTop="1dip"
+        android:layout_toRightOf="@+id/thumbnail"
+         />
+
+
+    <!--&lt;!&ndash; Rightend Duration &ndash;&gt;-->
+    <!--<TextView-->
+        <!--android:id="@+id/duration"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignParentRight="true"-->
+        <!--android:layout_alignTop="@id/title"-->
+        <!--android:gravity="right"-->
+        <!--android:text="5:45"-->
+        <!--android:layout_marginRight="5dip"-->
+        <!--android:textSize="10dip"-->
+        <!--android:textColor="#10bcc9"-->
+        <!--android:textStyle="bold"/>-->
+
+    <!-- Rightend Arrow -->
+    <!--<ImageView android:layout_width="wrap_content"-->
+               <!--android:layout_height="wrap_content"-->
+               <!--android:src="@android:drawable/"-->
+               <!--android:layout_alignParentRight="true"-->
+               <!--android:layout_centerVertical="true"/>-->
+
+</RelativeLayout>

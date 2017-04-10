@@ -1,9 +1,11 @@
 package in.co.icici.myapplication.HttpRequestHandler;
 
-import android.content.Context;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.text.TextUtils;
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -11,9 +13,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.io.OutputStream;
+
+import in.co.icici.myapplication.Constants;
 
 /**
  * Created by paln on 28/11/2015.
@@ -23,7 +27,9 @@ public class Httphandler {
 
 	private String TAG = "Http error";
 	private static Httphandler mInstance;
-	
+
+	private final String BILLER_SERVER = "https://biller.mybluemix.net";
+	private final String PAY_BILLER_URI = "/biller/icicibank/billpay";
 	public interface HttpDataListener{
 		public void onDataAvailable(String response);
 		
@@ -34,6 +40,7 @@ public class Httphandler {
 		if(mInstance == null) {
 			mInstance = new Httphandler();
 		}
+
 		return mInstance;
 	}
 	
@@ -50,6 +57,30 @@ public class Httphandler {
 		dataListener.onDataAvailable(responseObject.toString());
 	}
 
+	//https://biller.mybluemix.net/biller/icicibank/billpay
+	// ?client_id=jananidamodaran@gmail.com&token=d8356d1ad1c4&custid=33335001&nickname=act&amount=10000
+	public void makeBillerPayment(final JSONObject jsonObject, final HttpDataListener dataListener){
+		String nickname = "";
+		int amount = 0;
+
+		try {
+			nickname = jsonObject.getString(Constants.SMSG_KEY_NICKNAME);
+			amount = (int) jsonObject.get(Constants.SMSG_KEY_AMOUNT);
+
+		} catch (Exception e ) {
+			e.printStackTrace();
+		}
+		final Uri builtUri = Uri.parse(BILLER_SERVER + PAY_BILLER_URI)
+				.buildUpon()
+				.appendQueryParameter("client_id", Constants.emailId)
+				.appendQueryParameter("token", Constants.authToken)
+				.appendQueryParameter("custid", Constants.custId)
+				.appendQueryParameter("nickname", nickname)
+				.appendQueryParameter("amount", "" + amount)
+				.build();
+
+		new AsyncHttpTask(dataListener).execute(builtUri.toString(), "GET");
+	}
 	private class AsyncHttpTask extends AsyncTask<String, Void, Integer> {
 
 		String response;
@@ -132,4 +163,27 @@ public class Httphandler {
 		return result;
 	}
 
+	public JSONArray handleICICServerResponse(final String serverResponse, final HttpDataListener dataListener) {
+		//purpose
+		// in the server response, first object in the array is the status code result is the required data :( :(
+
+		JSONArray parsedResult = new JSONArray();
+		try {
+			JSONArray jsonArray = new JSONArray(serverResponse);
+			JSONObject statusObject = (JSONObject) jsonArray.get(0);
+			int status = statusObject.getInt("code");
+
+			if(status == 200) {
+				for(int i=1; i<jsonArray.length(); i++) {
+					parsedResult.put(jsonArray.getJSONObject(i));
+				}
+			} else {
+				dataListener.onError( new Exception("server request failed") );
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return  parsedResult;
+	}
 }

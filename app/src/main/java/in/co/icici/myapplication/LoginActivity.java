@@ -17,6 +17,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -26,20 +27,16 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import in.co.icici.myapplication.HttpRequestHandler.Httphandler;
-import in.co.icici.myapplication.HttpRequestHandler.Httphandler.HttpDataListener;
+import in.co.icici.myapplication.util.Authorisation;
+import in.co.icici.myapplication.util.Authorisation.AuthorisationListener;
 
 import static android.Manifest.permission.READ_CONTACTS;
-import static android.media.CamcorderProfile.get;
 
 /**
  * A login screen that offers login via email/password.
@@ -51,19 +48,16 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 	 */
 	private static final int REQUEST_READ_CONTACTS = 0;
 
-	/**
-	 * A dummy authentication store containing known user names and passwords.
-	 * TODO: remove after connecting to a real authentication system.
-	 */
-	private static final String[] DUMMY_CREDENTIALS = new String[]{
-			"foo@example.com:hello", "bar@example.com:world"
-	};
-
 	// UI references.
 	private AutoCompleteTextView mEmailView;
 	private EditText mPasswordView;
 	private View mProgressView;
 	private View mLoginFormView;
+
+	JSONObject mMsgObject;
+	boolean mHasMsg = false;
+
+	private final String TAG = "LoginActivity";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -96,10 +90,42 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 		mLoginFormView = findViewById(R.id.login_form);
 		mProgressView = findViewById(R.id.login_progress);
 
-		mEmailView.setText("jananidamodaran@gmail.com");
-		mPasswordView.setText("BU5IHUOV");
+		mEmailView.setText(Constants.emailId);
+		mPasswordView.setText(Constants.passwd);
+
+		handleMsg(getIntent().getExtras());
 	}
 
+	private void handleMsg(final Bundle bundle) {
+		if(bundle == null) {
+			return;
+		}
+		mHasMsg = bundle.getBoolean(Constants.INTENT_HAS_MESSAGE, false);
+		if(!mHasMsg) {
+			return;
+		}
+		String msg = bundle.getString(Constants.INTENT_MESSAGE);
+		Log.d(TAG, "got : " + msg);
+		try{
+			mMsgObject = new JSONObject(msg);
+
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void handleAuthorisationSuccess() {
+		Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+
+		if(mHasMsg) {
+			intent.putExtra(Constants.INTENT_HAS_MESSAGE, true);
+			intent.putExtra(Constants.INTENT_MESSAGE, mMsgObject.toString());
+			intent.putExtra(Constants.INTENT_SAVED_MESSAGE, false);
+			intent.putExtra(Constants.INTENT_FRAGMENT_NAME, PaymentFragment.class.getName());
+		}
+		startActivity(intent);
+		finish();
+	}
 	private void populateAutoComplete() {
 		if (!mayRequestContacts()) {
 			return;
@@ -188,38 +214,22 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 			// perform the user login attempt.
 			showProgress(true);
 
-			HttpDataListener httpDataListener = new HttpDataListener() {
+			AuthorisationListener authorisationListener = new AuthorisationListener() {
 				@Override
-				public void onDataAvailable(String response) {
+				public void onAuthorisationSuccess() {
 					showProgress(false);
-					try{
-						//lot of assumptions :(
-						JSONArray jsonArray = new JSONArray(response);
-						JSONObject jsonObject = (JSONObject)jsonArray.get(0);
-						String token = jsonObject.getString("token");
-						if(TextUtils.isEmpty(token)) {
-							mPasswordView.setError(getString(R.string.error_incorrect_password));
-							mPasswordView.requestFocus();
-						} else {
-							Constants.authToken = token;
-							Intent i = new Intent(getApplicationContext(), MainActivity.class);
-							startActivity(i);
-						}
-					}catch (JSONException e){
-						e.printStackTrace();
-					}
-
+					handleAuthorisationSuccess();
 				}
 
 				@Override
-				public void onError(Exception e) {
+				public void onAuthorisationFail() {
 					showProgress(false);
 					mPasswordView.setError(getString(R.string.error_incorrect_password));
 					mPasswordView.requestFocus();
 				}
 			};
 
-			Httphandler.getSharedInstance().getAuthToken(email, password, httpDataListener);
+			Authorisation.setAuthToken(email, password, authorisationListener);
 		}
 	}
 

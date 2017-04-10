@@ -1,54 +1,54 @@
 package in.co.icici.myapplication.mail;
+import java.io.IOException                 ;
+import java.util.Properties                ;
+import javax.mail.*                        ;
+import javax.mail.search.FlagTerm          ;
+import javax.mail.internet.InternetAddress ;
 
-import android.util.Log;
-
-import java.util.Properties;
-
-import javax.mail.FetchProfile;
-import javax.mail.Folder;
-import javax.mail.Message;
-import javax.mail.Session;
-import javax.mail.Store;
-/**
- * Created by paln on 2/4/2017.
- */
-
-public class Gmail extends javax.mail.Authenticator {
-	private String mailhost = "imaps.gmail.com";
-	private String user;
-	private String password;
-	private Session session;
-	public Gmail(String user, String password) {
-		this.user = user;
-		this.password = password;
-
-
-		Properties props = new Properties();
-		props.setProperty("mail.store.protocoll", "imaps");
-		props.setProperty("mail.imaps.host", mailhost);
-		props.put("mail.imaps.auth", "true");
-		props.put("mail.imaps.port", "993");
-		props.put("mail.imaps.socketFactory.port", "993");
-		props.put("mail.imaps.socketFactory.class",
-				"javax.net.ssl.SSLSocketFactory");
-		props.put("mail.imaps.socketFactory.fallback", "false");
-		props.setProperty("mail.imaps.quitwait", "false");
-		session = Session.getDefaultInstance(props, this);
-	}
-	public synchronized Message[] readMail() throws Exception {
+public class Gmail {
+	public static String[] UnreadMail(
+			String server   ,
+			String folder   ,
+			String from     ,
+			String username ,
+			String password
+	) {
+		Properties props = System.getProperties()                                     ;
+		props.setProperty("mail.store.protocol", "imaps")                             ;
 		try {
-			Store store = session.getStore("imaps");
-			store.connect("imaps.gmail.com", user, password);
-			Folder folder = store.getFolder("INBOX");
-			folder.open(Folder.READ_ONLY);
-			Message[] msgs = folder.getMessages(1, 10);
-			FetchProfile fp = new FetchProfile();
-			fp.add(FetchProfile.Item.ENVELOPE);
-			folder.fetch(msgs, fp);
-			return msgs;
-		} catch (Exception e) {
-			Log.e("readMail", e.getMessage(), e);
-			return null;
+			Session session  = Session.getDefaultInstance(props, null)                ;
+			Store store      = session.getStore("imaps")                              ;
+			store.connect(server, username, password)                                 ;
+			Folder inbox     = store.getFolder(folder)                                ;
+			inbox.open(Folder.READ_WRITE)                                             ;
+			FlagTerm ft      = new FlagTerm(new Flags(Flags.Flag.SEEN), false)        ;
+			Message msgs[]   = inbox.search(ft)                                       ;
+
+			String[] emails  = new String[msgs.length]                                ;
+			String[] content = new String[msgs.length]                                ;
+
+			if (msgs.length > 0)
+			{
+				for (int i = 0; i < msgs.length ; i++)
+				{
+					emails[i] = ((InternetAddress) msgs[i].getFrom()[0]).getAddress() ;
+//					if (emails[i].equals(from))
+//					{
+						content[i] = msgs[i].getContent().toString()                  ;
+//					}
+				}
+			}
+			store.close()                                                             ;
+			return content                                                            ;
+		}
+		catch (NoSuchProviderException e) {
+			return null                                                               ;
+		}
+		catch (MessagingException e) {
+			return null                                                               ;
+		}
+		catch (IOException e) {
+			return null                                                               ;
 		}
 	}
 }
